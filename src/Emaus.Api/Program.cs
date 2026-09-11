@@ -23,6 +23,7 @@ using Emaus.Infrastructure.Repositories;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -203,6 +204,18 @@ var app = builder.Build();
 // Pentru producție pe SQL Server/PostgreSQL, înlocuiți EnsureCreated cu migrații EF Core
 // reale (`dotnet ef migrations add InitialCreate`, apoi `Database.Migrate()`) — vezi
 // backend/schema.md, secțiunea "Următorul pas tehnic".
+//
+// Sqlite creează fișierul .db la prima scriere, dar NU și directoarele lipsă din cale —
+// necesar pe Azure App Service, unde ConnectionStrings__Default e suprascris cu o cale pe
+// discul persistent (ex. /home/data/emaus.db), în afara wwwroot, ca redeploy-urile (care
+// înlocuiesc conținutul wwwroot) să nu șteargă baza de date.
+var sqliteDirectory = Path.GetDirectoryName(Path.GetFullPath(
+    new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("Default")).DataSource));
+if (!string.IsNullOrEmpty(sqliteDirectory))
+{
+    Directory.CreateDirectory(sqliteDirectory);
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

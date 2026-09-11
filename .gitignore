@@ -1,6 +1,7 @@
 # .NET build output
 **/bin/
 **/obj/
+publish/
 
 # Baza de date locală SQLite (EnsureCreated, fără migrații)
 **/*.db
