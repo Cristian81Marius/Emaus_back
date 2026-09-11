@@ -24,10 +24,12 @@ public class MenuService
         [
             new("Gestiune",
             [
+                new("dashboard", "Dashboard", "/dashboard", "📊"),
                 new("beneficiaries", "Beneficiari", "/beneficiaries", "🧑‍🤝‍🧑"),
                 new("maintenance", "Mentenanță", "/maintenance", "🛠️"),
                 new("cleaning", "Curățenie", "/cleaning", "🧹"),
                 new("notifications", "Notificări", "/notifications", "🔔"),
+                new("documents", "Documente utile", "/documents", "📄"),
             ]),
         ]);
 
