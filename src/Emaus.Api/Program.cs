@@ -250,6 +250,10 @@ else
     app.UseHttpsRedirection();
 }
 
+// Documente statice publice (ex. contractul-tip de voluntariat) — vezi wwwroot/documents/.
+// Fără [Authorize]: nu conțin date personale, sunt formulare goale de completat/semnat.
+app.UseStaticFiles();
+
 app.UseCors(CorsPolicyName);
 
 app.UseAuthentication();
