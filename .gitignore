@@ -1,0 +1,21 @@
+# .NET build output
+**/bin/
+**/obj/
+
+# Baza de date locală SQLite (EnsureCreated, fără migrații)
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Setări specifice utilizatorului Visual Studio
+*.user
+
+# Secrete — chei de cont de service Firebase, certificate etc. Niciodată în git.
+**/secrets/
+
+# Editor / OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

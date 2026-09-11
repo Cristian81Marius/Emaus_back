@@ -1,0 +1,59 @@
+@Emaus.Api_HostAddress = http://localhost:5017
+
+### Login cu contul de nucleu (Alexandra, creat de DbSeeder) — identifier = telefon SAU email
+POST {{Emaus.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "0700000000",
+  "password": "Emaus2026!"
+}
+
+### Copiază token-ul din răspunsul de mai sus în variabila de mai jos, apoi rulează restul
+@token = PUNE_AICI_TOKENUL
+
+### Toate locațiile, cu unitățile lor și statusul curent
+GET {{Emaus.Api_HostAddress}}/api/properties
+Authorization: Bearer {{token}}
+
+### Creează un beneficiar nou
+POST {{Emaus.Api_HostAddress}}/api/beneficiaries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Popescu Ana",
+  "phone": "0722000000",
+  "materialSituation": "Venit redus, tratament oncologic în curs"
+}
+
+### Solicitare nouă de cazare (foloseste id-ul beneficiarului din răspunsul de mai sus)
+POST {{Emaus.Api_HostAddress}}/api/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "beneficiaryId": "PUNE_AICI_ID_BENEFICIAR",
+  "requestedCheckIn": "2026-09-01",
+  "requestedCheckOut": "2026-09-10"
+}
+
+### Notificările mele
+GET {{Emaus.Api_HostAddress}}/api/notifications/mine
+Authorization: Bearer {{token}}
+
+### Dashboard Emaus
+GET {{Emaus.Api_HostAddress}}/api/stats/overview
+Authorization: Bearer {{token}}
+
+### Meniu — proiectul Box of Blessing
+GET {{Emaus.Api_HostAddress}}/api/menu?project=bob
+Authorization: Bearer {{token}}
+
+### BOB — beneficiari
+GET {{Emaus.Api_HostAddress}}/api/bob/beneficiaries
+Authorization: Bearer {{token}}
+
+### BOB — catalog cutie
+GET {{Emaus.Api_HostAddress}}/api/bob/box
+Authorization: Bearer {{token}}
