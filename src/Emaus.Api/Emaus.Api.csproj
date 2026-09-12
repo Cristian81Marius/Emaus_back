@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.6.0" />
+    <PackageReference Include="itext7" Version="9.7.0" />
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
@@ -20,6 +21,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Emaus.Infrastructure\Emaus.Infrastructure.csproj" />
     <ProjectReference Include="..\Emaus.Domain\Emaus.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Documents\housing-contract-template.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

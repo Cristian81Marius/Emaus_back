@@ -17,6 +17,13 @@ public class Property
     public bool IsTemporary { get; set; } = false;
     public string? Notes { get; set; }
 
+    /// <summary>Arhivată = nu mai e o locație activă a asociației (ex. contract de închiriere
+    /// încheiat) — nu mai apare implicit pe ecranul de Locații, dar rămâne accesibilă (istoric
+    /// cazări/rapoarte) și poate fi reactivată. NU o ștergere reală: o unitate cu istoric de
+    /// cazări nu poate fi ștearsă din bază (FK Booking→Unit e Restrict, vezi AppDbContext),
+    /// deci arhivarea e singura formă practică de "elimină din listă" pentru o locație reală.</summary>
+    public bool IsArchived { get; set; } = false;
+
     public string? Interfon { get; set; }
     /// <summary>Cine are cheile locației — listă simplă de nume, NU o legătură reală spre
     /// utilizatori (nu toți cei care țin o cheie au neapărat cont în aplicație). Stocată ca JSON

@@ -11,10 +11,14 @@ namespace Emaus.Api.Controllers;
 [Authorize]
 public class BeneficiariesController(BeneficiaryService beneficiaryService) : ControllerBase
 {
+    /// <summary>`propertyId` — istoricul de beneficiari al UNEI locații (vezi
+    /// property/[id].tsx → "Istoric beneficiari"), nu lista globală; rămâne paginat la fel
+    /// ca fără filtru, ca să nu aducă totul deodată pentru o locație cu mult istoric.</summary>
     [HttpGet]
     public async Task<ActionResult<PagedResult<BeneficiaryDto>>> GetAll(
-        [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 30) =>
-        Ok(await beneficiaryService.GetAllAsync(search, page, pageSize));
+        [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 30,
+        [FromQuery] Guid? propertyId = null) =>
+        Ok(await beneficiaryService.GetAllAsync(search, page, pageSize, propertyId));
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<BeneficiaryDto>> GetById(Guid id) =>

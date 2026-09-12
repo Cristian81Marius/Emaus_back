@@ -130,6 +130,43 @@ public class BeneficiaryServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetAllAsync_PropertyIdFilter_OnlyReturnsBeneficiariesWithBookingAtThatProperty()
+    {
+        var stayedHere = await AddBeneficiaryAsync("A stat aici");
+        var stayedElsewhere = await AddBeneficiaryAsync("A stat altundeva");
+        var neverStayed = await AddBeneficiaryAsync("N-a fost cazat niciodată");
+
+        var user = new ApplicationUser { Id = Guid.NewGuid(), FullName = "Tester", Phone = "0700000009", PasswordHash = "x" };
+        var propertyHere = new Property { Id = Guid.NewGuid(), Address = "Aici", ShortLabel = "Aici" };
+        var propertyElsewhere = new Property { Id = Guid.NewGuid(), Address = "Altundeva", ShortLabel = "Altundeva" };
+        var unitHere = new Unit { Id = Guid.NewGuid(), PropertyId = propertyHere.Id, Name = "U1", Capacity = 1 };
+        var unitElsewhere = new Unit { Id = Guid.NewGuid(), PropertyId = propertyElsewhere.Id, Name = "U2", Capacity = 1 };
+        _testDb.Db.Users.Add(user);
+        _testDb.Db.Properties.AddRange(propertyHere, propertyElsewhere);
+        _testDb.Db.Units.AddRange(unitHere, unitElsewhere);
+        _testDb.Db.Bookings.AddRange(
+            new Booking
+            {
+                Id = Guid.NewGuid(), BeneficiaryId = stayedHere.Id, UnitId = unitHere.Id,
+                RequestedCheckIn = new DateOnly(2026, 1, 1), RequestedCheckOut = new DateOnly(2026, 1, 10),
+                Status = BookingStatus.Completed, CreatedByUserId = user.Id,
+            },
+            new Booking
+            {
+                Id = Guid.NewGuid(), BeneficiaryId = stayedElsewhere.Id, UnitId = unitElsewhere.Id,
+                RequestedCheckIn = new DateOnly(2026, 1, 1), RequestedCheckOut = new DateOnly(2026, 1, 10),
+                Status = BookingStatus.Completed, CreatedByUserId = user.Id,
+            });
+        await _testDb.Db.SaveChangesAsync();
+
+        var result = await _sut.GetAllAsync(search: null, page: 1, pageSize: 30, propertyId: propertyHere.Id);
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(stayedHere.Id, item.Id);
+        Assert.DoesNotContain(result.Items, b => b.Id == stayedElsewhere.Id || b.Id == neverStayed.Id);
+    }
+
+    [Fact]
     public async Task UpdateAsync_SetsContractFields()
     {
         var beneficiary = await AddBeneficiaryAsync("Contract Test");

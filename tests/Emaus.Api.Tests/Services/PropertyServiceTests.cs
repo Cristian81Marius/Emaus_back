@@ -91,4 +91,58 @@ public class PropertyServiceTests : IDisposable
 
         Assert.False(result.IsSuccess);
     }
+
+    [Fact]
+    public async Task GetAllAsync_ByDefault_ExcludesArchivedProperties()
+    {
+        var archived = new Property { Id = Guid.NewGuid(), Address = "Str. Arhivată 1", ShortLabel = "Arhivată", IsArchived = true };
+        _testDb.Db.Properties.Add(archived);
+        await _testDb.Db.SaveChangesAsync();
+
+        var result = await _sut.GetAllAsync();
+
+        Assert.DoesNotContain(result, p => p.Id == archived.Id);
+        Assert.Contains(result, p => p.Id == _property.Id);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_IncludeArchivedTrue_ReturnsArchivedToo()
+    {
+        var archived = new Property { Id = Guid.NewGuid(), Address = "Str. Arhivată 1", ShortLabel = "Arhivată", IsArchived = true };
+        _testDb.Db.Properties.Add(archived);
+        await _testDb.Db.SaveChangesAsync();
+
+        var result = await _sut.GetAllAsync(includeArchived: true);
+
+        Assert.Contains(result, p => p.Id == archived.Id);
+    }
+
+    [Fact]
+    public async Task ArchiveAsync_SetsIsArchivedTrue_AndKeepsUnitsUntouched()
+    {
+        var result = await _sut.ArchiveAsync(_property.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.IsArchived);
+        Assert.Single(result.Value.Units);
+    }
+
+    [Fact]
+    public async Task UnarchiveAsync_SetsIsArchivedFalse()
+    {
+        await _sut.ArchiveAsync(_property.Id);
+
+        var result = await _sut.UnarchiveAsync(_property.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.IsArchived);
+    }
+
+    [Fact]
+    public async Task ArchiveAsync_UnknownId_ReturnsNotFound()
+    {
+        var result = await _sut.ArchiveAsync(Guid.NewGuid());
+
+        Assert.False(result.IsSuccess);
+    }
 }

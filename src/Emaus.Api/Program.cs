@@ -8,6 +8,7 @@ using Emaus.Api.Services.Beneficiaries;
 using Emaus.Api.Services.Bob;
 using Emaus.Api.Services.Bookings;
 using Emaus.Api.Services.Cleaning;
+using Emaus.Api.Services.Contracts;
 using Emaus.Api.Services.Logs;
 using Emaus.Api.Services.Maintenance;
 using Emaus.Api.Services.Menu;
@@ -68,6 +69,7 @@ builder.Services.AddScoped<OpportunityService>();
 builder.Services.AddScoped<RequestLogService>();
 builder.Services.AddScoped<StatsService>();
 builder.Services.AddScoped<MenuService>();
+builder.Services.AddScoped<HousingContractPdfService>();
 
 // ---- Box of Blessing (BOB) — vezi Emaus.Domain/Bob, docs/API.md §13 --------------------
 builder.Services.AddScoped<BobBeneficiaryService>();

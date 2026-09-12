@@ -19,9 +19,14 @@ public class PropertyService(
     IUnitOfWork unitOfWork,
     NotificationService notifications)
 {
-    public async Task<List<PropertyDto>> GetAllAsync()
+    /// <summary>Implicit doar locațiile active — ecranul de Locații nu trebuie să arate din
+    /// start locațiile arhivate (contract de închiriere încheiat etc.). `includeArchived: true`
+    /// e folosit doar de comutatorul explicit "Arată și arhivate" de pe același ecran.</summary>
+    public async Task<List<PropertyDto>> GetAllAsync(bool includeArchived = false)
     {
-        var list = await properties.Query().Include(p => p.Units).OrderBy(p => p.Address).ToListAsync();
+        var query = properties.Query().Include(p => p.Units).AsQueryable();
+        if (!includeArchived) query = query.Where(p => !p.IsArchived);
+        var list = await query.OrderBy(p => p.Address).ToListAsync();
         return list.Select(ToDto).ToList();
     }
 
@@ -67,6 +72,29 @@ public class PropertyService(
         if (request.KeyNotes is not null) property.KeyNotes = request.KeyNotes;
         await unitOfWork.SaveChangesAsync();
 
+        return ServiceResult<PropertyDto>.Ok(ToDto(property));
+    }
+
+    /// <summary>Vezi comentariul de pe Property.IsArchived — nu o ștergere reală, doar scoate
+    /// locația din lista implicită. Nu atinge unitățile/istoricul — rămân neschimbate, doar
+    /// nu mai apar pe ecranul principal de Locații.</summary>
+    public async Task<ServiceResult<PropertyDto>> ArchiveAsync(Guid id)
+    {
+        var property = await properties.Query().Include(p => p.Units).SingleOrDefaultAsync(p => p.Id == id);
+        if (property is null) return ServiceResult<PropertyDto>.NotFound("Locația nu există.");
+
+        property.IsArchived = true;
+        await unitOfWork.SaveChangesAsync();
+        return ServiceResult<PropertyDto>.Ok(ToDto(property));
+    }
+
+    public async Task<ServiceResult<PropertyDto>> UnarchiveAsync(Guid id)
+    {
+        var property = await properties.Query().Include(p => p.Units).SingleOrDefaultAsync(p => p.Id == id);
+        if (property is null) return ServiceResult<PropertyDto>.NotFound("Locația nu există.");
+
+        property.IsArchived = false;
+        await unitOfWork.SaveChangesAsync();
         return ServiceResult<PropertyDto>.Ok(ToDto(property));
     }
 
@@ -120,7 +148,7 @@ public class PropertyService(
 
     private static PropertyDto ToDto(Property p) => new(
         p.Id, p.Address, p.ShortLabel, p.IsTemporary, p.Notes, p.Interfon, p.KeyHolders, p.KeyNotes,
-        p.LifetimeStayDays, p.LifetimeBookingsCompleted, p.Units.Select(ToUnitDto).ToList());
+        p.LifetimeStayDays, p.LifetimeBookingsCompleted, p.Units.Select(ToUnitDto).ToList(), p.IsArchived);
 
     private static UnitDto ToUnitDto(Unit u) =>
         new(u.Id, u.PropertyId, u.Name, u.Capacity, u.Status, u.StatusNotes);

@@ -16,7 +16,8 @@ namespace Emaus.Api.Controllers;
 public class PropertiesController(PropertyService propertyService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<PropertyDto>>> GetAll() => Ok(await propertyService.GetAllAsync());
+    public async Task<ActionResult<List<PropertyDto>>> GetAll([FromQuery] bool includeArchived = false) =>
+        Ok(await propertyService.GetAllAsync(includeArchived));
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PropertyDto>> GetById(Guid id) =>
@@ -31,6 +32,18 @@ public class PropertiesController(PropertyService propertyService) : ControllerB
     [Authorize(Roles = "Nucleus")]
     public async Task<ActionResult<PropertyDto>> Update(Guid id, UpdatePropertyRequest request) =>
         (await propertyService.UpdateAsync(id, request)).ToActionResult(this);
+
+    /// <summary>Nu o ștergere reală (vezi Property.IsArchived) — scoate locația din lista
+    /// implicită, fără să atingă unitățile/istoricul de cazări.</summary>
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Roles = "Nucleus")]
+    public async Task<ActionResult<PropertyDto>> Archive(Guid id) =>
+        (await propertyService.ArchiveAsync(id)).ToActionResult(this);
+
+    [HttpPost("{id:guid}/unarchive")]
+    [Authorize(Roles = "Nucleus")]
+    public async Task<ActionResult<PropertyDto>> Unarchive(Guid id) =>
+        (await propertyService.UnarchiveAsync(id)).ToActionResult(this);
 
     [HttpPost("{id:guid}/units")]
     [Authorize(Roles = "Nucleus")]

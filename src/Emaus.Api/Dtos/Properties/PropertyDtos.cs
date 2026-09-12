@@ -7,7 +7,7 @@ public record UnitDto(Guid Id, Guid PropertyId, string Name, int Capacity, UnitS
 public record PropertyDto(
     Guid Id, string Address, string ShortLabel, bool IsTemporary, string? Notes,
     string? Interfon, List<string> KeyHolders, string? KeyNotes,
-    int? LifetimeStayDays, int? LifetimeBookingsCompleted, List<UnitDto> Units);
+    int? LifetimeStayDays, int? LifetimeBookingsCompleted, List<UnitDto> Units, bool IsArchived);
 
 public record CreatePropertyRequest(
     string Address, string ShortLabel, bool IsTemporary, string? Notes,

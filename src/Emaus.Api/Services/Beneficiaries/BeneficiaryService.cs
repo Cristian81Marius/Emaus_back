@@ -19,12 +19,19 @@ public class BeneficiaryService(IRepository<Beneficiary> beneficiaries, IUnitOfW
     /// pe telefon. SQLite nu poate traduce normalizarea NFD în SQL, deci filtrarea pe nume
     /// se face în memorie — acceptabil la scara unei asociații (sute, nu milioane, de
     /// beneficiari); telefonul rămâne filtrabil direct în interogare.</summary>
-    public async Task<PagedResult<BeneficiaryDto>> GetAllAsync(string? search, int page, int pageSize)
+    /// <summary><paramref name="propertyId"/> — doar beneficiarii care au avut cel puțin o
+    /// cazare la ACEA locație (join pe Bookings→Unit, nu o coloană dedicată — un beneficiar
+    /// poate sta la mai multe locații de-a lungul timpului). Filtrul se aplică la nivel de
+    /// interogare, înainte de paginare/căutare — la fel de eficient ca fără filtru.</summary>
+    public async Task<PagedResult<BeneficiaryDto>> GetAllAsync(string? search, int page, int pageSize, Guid? propertyId = null)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 30 : pageSize;
 
-        var query = beneficiaries.Query().Include(b => b.Locality).OrderByDescending(b => b.CreatedAt).AsQueryable();
+        var query = beneficiaries.Query().Include(b => b.Locality).AsQueryable();
+        if (propertyId is not null)
+            query = query.Where(b => b.Bookings.Any(bk => bk.Unit != null && bk.Unit.PropertyId == propertyId));
+        query = query.OrderByDescending(b => b.CreatedAt);
 
         if (string.IsNullOrWhiteSpace(search))
         {
