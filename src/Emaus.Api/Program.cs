@@ -223,6 +223,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     db.Database.EnsureCreated();
+    ApplyLightweightSchemaFixes(db, logger);
     DbSeeder.Seed(db, logger);
 
     if (!pushEnabled)
@@ -266,3 +267,41 @@ app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.Run();
+
+// ---- Reparații ușoare de schemă, pentru EnsureCreated fără migrații reale -----------------
+// `EnsureCreated()` de mai sus NU modifică o bază deja existentă — dacă am adăugat o coloană
+// nouă pe o entitate (ex. Property.IsArchived) DUPĂ ce baza de producție exista deja, acea
+// coloană rămâne invizibilă pentru orice interogare, cu eroare SQLite "no such column" (500
+// generic pentru client). Nu merită migrații EF Core reale doar pentru asta (vezi comentariul
+// de mai sus, "Următorul pas tehnic") — un ALTER TABLE idempotent, verificat cu PRAGMA
+// table_info înainte, e suficient și sigur de rulat la fiecare pornire (inclusiv pe o bază
+// proaspătă, unde EnsureCreated a creat deja coloana și AddColumnIfMissing nu găsește nimic
+// de făcut). Adăugați aici orice coloană nouă viitoare pe o entitate deja existentă.
+static void ApplyLightweightSchemaFixes(AppDbContext db, ILogger logger)
+{
+    AddColumnIfMissing(db, logger, "Properties", "IsArchived", "INTEGER NOT NULL DEFAULT 0");
+}
+
+static void AddColumnIfMissing(AppDbContext db, ILogger logger, string table, string column, string columnDefinitionSql)
+{
+    var connection = db.Database.GetDbConnection();
+    if (connection.State != System.Data.ConnectionState.Open) connection.Open();
+
+    using (var checkCmd = connection.CreateCommand())
+    {
+        checkCmd.CommandText = $"PRAGMA table_info({table})";
+        using var reader = checkCmd.ExecuteReader();
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(reader.GetOrdinal("name")), column, StringComparison.OrdinalIgnoreCase))
+                return; // coloana există deja — nimic de făcut (bază proaspătă sau reparată anterior)
+        }
+    }
+
+    using var alterCmd = connection.CreateCommand();
+    alterCmd.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {columnDefinitionSql}";
+    alterCmd.ExecuteNonQuery();
+    logger.LogWarning(
+        "Reparație de schemă: coloana {Table}.{Column} lipsea dintr-o bază creată înainte de schimbarea de model — adăugată acum via ALTER TABLE.",
+        table, column);
+}
