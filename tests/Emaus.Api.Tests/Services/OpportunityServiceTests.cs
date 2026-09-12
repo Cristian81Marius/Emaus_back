@@ -76,6 +76,22 @@ public class OpportunityServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetAllAsync_ReturnsNamesOfSignedUpVolunteers()
+    {
+        var created = await _sut.CreateAsync(new CreateOpportunityRequest(
+            OpportunityType.Event, "Titlu", null, null, false, null, null, NotifyEveryone: false), _volunteer1.Id);
+        await _sut.SignUpAsync(created.Id, _volunteer1.Id);
+        await _sut.SignUpAsync(created.Id, _volunteer2.Id);
+
+        var all = await _sut.GetAllAsync(_volunteer1.Id);
+
+        var opportunity = Assert.Single(all);
+        Assert.Equal(2, opportunity.SignedUpNames.Count);
+        Assert.Contains("David", opportunity.SignedUpNames);
+        Assert.Contains("Ligia", opportunity.SignedUpNames);
+    }
+
+    [Fact]
     public async Task SignUpAsync_AtCapacity_ReturnsConflictForNewSignup()
     {
         var created = await _sut.CreateAsync(new CreateOpportunityRequest(

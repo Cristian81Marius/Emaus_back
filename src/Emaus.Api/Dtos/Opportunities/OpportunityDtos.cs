@@ -6,7 +6,8 @@ public record OpportunityDto(
     Guid Id, OpportunityType Type, string Title, string? Description,
     DateTime? ScheduledAt, // null = "dată de stabilit"
     bool HasTime, // separat de existența datei — are și ORĂ aleasă?
-    Guid? PropertyId, string? PropertyAddress, int? Capacity, int SignedUpCount, bool CurrentUserSignedUp);
+    Guid? PropertyId, string? PropertyAddress, int? Capacity, int SignedUpCount, bool CurrentUserSignedUp,
+    List<string> SignedUpNames);
 
 /// <summary>`NotifyEveryone` NU se stochează pe entitate — controlează doar efectul la creare
 /// (notifică toți voluntarii sau nu).</summary>

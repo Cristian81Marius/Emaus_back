@@ -110,9 +110,10 @@ public class OpportunityService(
     }
 
     private IQueryable<VolunteerOpportunity> BaseQuery() =>
-        opportunities.Query().Include(o => o.Property).Include(o => o.Signups);
+        opportunities.Query().Include(o => o.Property).Include(o => o.Signups).ThenInclude(s => s.VolunteerUser);
 
     private static OpportunityDto ToDto(VolunteerOpportunity o, Guid currentUserId) => new(
         o.Id, o.Type, o.Title, o.Description, o.ScheduledAt, o.HasTime, o.PropertyId, o.Property?.Address,
-        o.Capacity, o.Signups.Count, o.Signups.Any(s => s.VolunteerUserId == currentUserId));
+        o.Capacity, o.Signups.Count, o.Signups.Any(s => s.VolunteerUserId == currentUserId),
+        o.Signups.Select(s => s.VolunteerUser.FullName).ToList());
 }
