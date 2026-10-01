@@ -78,23 +78,36 @@ builder.Services.AddScoped<BobPurchaseService>();
 builder.Services.AddScoped<BobStatsService>();
 
 // ---- Push notifications (FCM) -----------------------------------------------------------
-// Opțional: dacă `Firebase:ServiceAccountKeyPath` lipsește sau fișierul nu există (implicit
-// în dezvoltare, până se configurează un cont Firebase real), aplicația pornește normal —
-// notificările în-app tot funcționează, doar push-ul real e dezactivat (vezi
-// NullPushNotificationSender). Nu tratăm lipsa Firebase ca eroare de configurare fatală.
+// Opțional: credențialele contului de service Firebase vin fie din
+// `Firebase:ServiceAccountJson` (conținutul JSON direct — varianta pentru Azure, setat ca
+// App Setting `Firebase__ServiceAccountJson`, fără să urcăm fișierul secret pe server), fie din
+// `Firebase:ServiceAccountKeyPath` (calea către fișier — varianta locală, din `secrets/`).
+// Dacă lipsesc amândouă, aplicația pornește normal — notificările în-app tot funcționează,
+// doar push-ul real e dezactivat (vezi NullPushNotificationSender).
+var firebaseKeyJson = builder.Configuration["Firebase:ServiceAccountJson"];
 var firebaseKeyPath = builder.Configuration["Firebase:ServiceAccountKeyPath"];
-var pushEnabled = !string.IsNullOrWhiteSpace(firebaseKeyPath) && File.Exists(firebaseKeyPath);
-if (pushEnabled)
+GoogleCredential? firebaseCredential = null;
+// GoogleCredential.FromJson/FromFile sunt marcate obsolete în Google.Apis.Auth mai nou
+// (recomandă CredentialFactory) — rămân funcționale și sunt exact ce documentează Firebase.
+#pragma warning disable CS0618
+if (!string.IsNullOrWhiteSpace(firebaseKeyJson))
+{
+    var json = firebaseKeyJson.Trim();
+    // Acceptăm și varianta Base64 (utilă dacă un panou de configurare strică ghilimelele).
+    if (!json.StartsWith('{')) json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(json));
+    firebaseCredential = GoogleCredential.FromJson(json);
+}
+else if (!string.IsNullOrWhiteSpace(firebaseKeyPath) && File.Exists(firebaseKeyPath))
+{
+    firebaseCredential = GoogleCredential.FromFile(firebaseKeyPath);
+}
+#pragma warning restore CS0618
+var pushEnabled = firebaseCredential is not null;
+if (firebaseCredential is not null)
 {
     if (FirebaseApp.DefaultInstance is null)
     {
-        // GoogleCredential.FromFile e marcat obsolete în Google.Apis.Auth mai nou (recomandă
-        // CredentialFactory, o suprafață API diferită) — rămâne funcțional și e exact ce
-        // documentează Firebase pentru citirea unui fișier JSON de cont de service; nu merită
-        // migrat fără un motiv concret.
-#pragma warning disable CS0618
-        FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromFile(firebaseKeyPath) });
-#pragma warning restore CS0618
+        FirebaseApp.Create(new AppOptions { Credential = firebaseCredential });
     }
     builder.Services.AddSingleton<IPushNotificationSender, FcmPushNotificationSender>();
 }
@@ -229,8 +242,8 @@ using (var scope = app.Services.CreateScope())
     if (!pushEnabled)
     {
         logger.LogWarning(
-            "Push notifications (FCM) NU sunt configurate — setează Firebase:ServiceAccountKeyPath " +
-            "în appsettings către fișierul JSON al contului de service Firebase. Notificările în-app " +
+            "Push notifications (FCM) NU sunt configurate — setează Firebase:ServiceAccountJson (App Setting " +
+            "Firebase__ServiceAccountJson pe Azure) sau Firebase:ServiceAccountKeyPath. Notificările în-app " +
             "(GET /api/notifications/mine) funcționează normal indiferent de asta.");
     }
 }
