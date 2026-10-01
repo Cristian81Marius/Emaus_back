@@ -3,6 +3,7 @@ using Emaus.Api.Dtos.Notifications;
 using Emaus.Domain;
 using Emaus.Domain.Entities;
 using Emaus.Domain.Repositories;
+using FirebaseAdmin;
 using Microsoft.EntityFrameworkCore;
 
 namespace Emaus.Api.Services.Notifications;
@@ -115,6 +116,47 @@ public class NotificationService(
             await unitOfWork.SaveChangesAsync();
         }
         return ServiceResult.Ok();
+    }
+
+    /// <summary>Diagnostic: trimite un push de test DOAR pe dispozitivele utilizatorului curent și
+    /// întoarce răspunsul FCM pentru fiecare token (în loc să-l înghită ca SendPushAsync).</summary>
+    public async Task<PushTestResultDto> TestPushAsync(Guid userId)
+    {
+        var tokens = await pushTokens.Query()
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+
+        var configured = FirebaseApp.DefaultInstance is not null;
+        var results = new List<PushTestTokenResultDto>();
+        foreach (var t in tokens)
+        {
+            var tokenEnd = t.Token.Length > 8 ? "…" + t.Token[^8..] : t.Token;
+            if (!configured)
+            {
+                results.Add(new PushTestTokenResultDto(t.Platform, tokenEnd, t.CreatedAt, false, "Firebase nu e configurat pe server."));
+                continue;
+            }
+            try
+            {
+                await FirebaseAdmin.Messaging.FirebaseMessaging.DefaultInstance.SendAsync(new FirebaseAdmin.Messaging.Message
+                {
+                    Token = t.Token,
+                    Notification = new FirebaseAdmin.Messaging.Notification { Title = PushTitle, Body = "Notificare de test — dacă o vezi, push-ul funcționează." },
+                    Data = new Dictionary<string, string> { ["type"] = "Test" }
+                });
+                results.Add(new PushTestTokenResultDto(t.Platform, tokenEnd, t.CreatedAt, true, null));
+            }
+            catch (FirebaseAdmin.Messaging.FirebaseMessagingException ex)
+            {
+                results.Add(new PushTestTokenResultDto(t.Platform, tokenEnd, t.CreatedAt, false, $"{ex.MessagingErrorCode}: {ex.Message}"));
+            }
+            catch (Exception ex)
+            {
+                results.Add(new PushTestTokenResultDto(t.Platform, tokenEnd, t.CreatedAt, false, ex.Message));
+            }
+        }
+        return new PushTestResultDto(configured, tokens.Count, results);
     }
 
     private async Task SendPushAsync(
