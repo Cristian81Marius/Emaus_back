@@ -15,6 +15,7 @@ public class MenuService
     private static readonly MenuConfigDto EmausMenu = new(
         Tabs:
         [
+            new("today", "Azi", "/today", "☀️"),
             new("locations", "Locații", "/", "🏠"),
             new("bookings", "Solicitări", "/bookings", "📋"),
             new("opportunities", "Activități", "/opportunities", "🤝"),
