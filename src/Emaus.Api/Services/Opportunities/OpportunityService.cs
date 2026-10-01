@@ -55,7 +55,7 @@ public class OpportunityService(
         if (request.NotifyEveryone)
         {
             var when = request.ScheduledAt is { } scheduledAt ? $" ({scheduledAt:dd.MM HH:mm})" : "";
-            await notifications.NotifyRoleAsync(UserRole.Volunteer, NotificationType.NewOpportunityPublished,
+            await notifications.NotifyAllAsync(NotificationType.NewOpportunityPublished,
                 $"Oportunitate nouă: {opportunity.Title}{when}", nameof(VolunteerOpportunity), opportunity.Id);
         }
 

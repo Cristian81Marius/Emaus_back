@@ -37,6 +37,20 @@ public class NotificationService(
         await NotifyUsersAsync(recipients, type, message, relatedEntityType, relatedEntityId);
     }
 
+    /// <summary>Toți utilizatorii cu cont activ și aprobat, indiferent de rol (Nucleus + voluntari)
+    /// — pentru evenimentele pe care trebuie să le vadă toată lumea (activitate nouă, solicitare
+    /// nouă). Push-ul pleacă pe toate dispozitivele înregistrate ale acestor conturi.</summary>
+    public async Task NotifyAllAsync(NotificationType type, string message,
+        string? relatedEntityType = null, Guid? relatedEntityId = null)
+    {
+        var recipients = await users.Query()
+            .Where(u => u.IsActive && u.Status == UserStatus.Active)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        await NotifyUsersAsync(recipients, type, message, relatedEntityType, relatedEntityId);
+    }
+
     public async Task NotifyUserAsync(Guid userId, NotificationType type, string message,
         string? relatedEntityType = null, Guid? relatedEntityId = null)
         => await NotifyUsersAsync([userId], type, message, relatedEntityType, relatedEntityId);

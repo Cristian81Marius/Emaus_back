@@ -74,7 +74,7 @@ public class BookingService(
         bookings.Add(booking);
         await unitOfWork.SaveChangesAsync();
 
-        await notifications.NotifyRoleAsync(UserRole.Nucleus, NotificationType.NewBookingRequest,
+        await notifications.NotifyAllAsync(NotificationType.NewBookingRequest,
             $"Solicitare nouă pentru {beneficiary.FullName} ({request.RequestedCheckIn:dd.MM} – {request.RequestedCheckOut:dd.MM})",
             nameof(Booking), booking.Id);
 
