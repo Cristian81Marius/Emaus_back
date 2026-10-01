@@ -21,6 +21,9 @@ public class Booking
 
     public BookingStatus Status { get; set; } = BookingStatus.PendingApproval;
 
+    /// <summary>Observații / informații suplimentare scrise la crearea solicitării (opțional).</summary>
+    public string? Notes { get; set; }
+
     public Guid CreatedByUserId { get; set; }
     public ApplicationUser CreatedByUser { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

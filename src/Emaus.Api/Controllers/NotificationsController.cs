@@ -27,12 +27,6 @@ public class NotificationsController(NotificationService notificationService) : 
     public async Task<IActionResult> RegisterPushToken(RegisterPushTokenRequest request) =>
         (await notificationService.RegisterPushTokenAsync(User.GetUserId(), request)).ToActionResult(this);
 
-    /// <summary>Diagnostic — trimite un push de test pe dispozitivele contului curent și întoarce
-    /// rezultatul FCM pentru fiecare (vezi NotificationService.TestPushAsync).</summary>
-    [HttpPost("test-push")]
-    public async Task<ActionResult<PushTestResultDto>> TestPush() =>
-        Ok(await notificationService.TestPushAsync(User.GetUserId()));
-
     /// <summary>Apelat la logout, ca dispozitivul să nu mai primească push pentru contul din
     /// care utilizatorul tocmai a ieșit.</summary>
     [HttpDelete("push-token")]

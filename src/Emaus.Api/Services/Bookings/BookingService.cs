@@ -69,6 +69,7 @@ public class BookingService(
             RequestedCheckIn = request.RequestedCheckIn,
             RequestedCheckOut = request.RequestedCheckOut,
             Status = BookingStatus.PendingApproval,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
             CreatedByUserId = createdByUserId
         };
         bookings.Add(booking);
@@ -76,7 +77,7 @@ public class BookingService(
 
         await notifications.NotifyAllAsync(NotificationType.NewBookingRequest,
             $"Solicitare nouă pentru {beneficiary.FullName} ({request.RequestedCheckIn:dd.MM} – {request.RequestedCheckOut:dd.MM})",
-            nameof(Booking), booking.Id);
+            nameof(Booking), booking.Id, excludeUserId: createdByUserId);
 
         var created = await BaseQuery().SingleAsync(b => b.Id == booking.Id);
         return ServiceResult<BookingDto>.Ok(ToDto(created));
@@ -99,6 +100,8 @@ public class BookingService(
 
         if (request.RequestedCheckIn is not null) booking.RequestedCheckIn = request.RequestedCheckIn.Value;
         if (request.RequestedCheckOut is not null) booking.RequestedCheckOut = request.RequestedCheckOut.Value;
+        // Observațiile: null = nemodificat, "" = șterse.
+        if (request.Notes is not null) booking.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
 
         if (request.CaseManagerUserId is not null)
         {
@@ -306,5 +309,6 @@ public class BookingService(
         b.CaseManagerUserId, b.CaseManagerUser?.FullName,
         b.Comments.OrderBy(c => c.CreatedAt)
             .Select(c => new BookingCommentDto(c.Id, c.AuthorUserId, c.AuthorUser.FullName, c.Text, c.CreatedAt))
-            .ToList());
+            .ToList(),
+        b.Notes);
 }

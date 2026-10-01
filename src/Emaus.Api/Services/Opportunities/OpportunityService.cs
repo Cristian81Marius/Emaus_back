@@ -56,7 +56,8 @@ public class OpportunityService(
         {
             var when = request.ScheduledAt is { } scheduledAt ? $" ({scheduledAt:dd.MM HH:mm})" : "";
             await notifications.NotifyAllAsync(NotificationType.NewOpportunityPublished,
-                $"Oportunitate nouă: {opportunity.Title}{when}", nameof(VolunteerOpportunity), opportunity.Id);
+                $"Oportunitate nouă: {opportunity.Title}{when}", nameof(VolunteerOpportunity), opportunity.Id,
+                excludeUserId: currentUserId);
         }
 
         var created = await BaseQuery().SingleAsync(o => o.Id == opportunity.Id);

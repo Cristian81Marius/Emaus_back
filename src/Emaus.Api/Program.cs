@@ -293,6 +293,7 @@ app.Run();
 static void ApplyLightweightSchemaFixes(AppDbContext db, ILogger logger)
 {
     AddColumnIfMissing(db, logger, "Properties", "IsArchived", "INTEGER NOT NULL DEFAULT 0");
+    AddColumnIfMissing(db, logger, "Bookings", "Notes", "TEXT NULL");
 }
 
 static void AddColumnIfMissing(AppDbContext db, ILogger logger, string table, string column, string columnDefinitionSql)

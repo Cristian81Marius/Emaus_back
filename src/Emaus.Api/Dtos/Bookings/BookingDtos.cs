@@ -12,16 +12,17 @@ public record BookingDto(
     BookingStatus Status, string CreatedByName, DateTime CreatedAt, string? DecidedByName,
     DateTime? DecidedAt, string? DecisionNote,
     Guid? CaseManagerUserId, string? CaseManagerName, // [NOU] — vezi docs/API.md §6
-    List<BookingCommentDto> Comments);
+    List<BookingCommentDto> Comments,
+    string? Notes = null); // observații / informații suplimentare de la creare
 
 /// <summary>Cererea inițială — fără unitate alocată încă; alocarea se face separat, la aprobare.</summary>
-public record CreateBookingRequest(Guid BeneficiaryId, DateOnly RequestedCheckIn, DateOnly RequestedCheckOut);
+public record CreateBookingRequest(Guid BeneficiaryId, DateOnly RequestedCheckIn, DateOnly RequestedCheckOut, string? Notes = null);
 
 /// <summary>Perioada CERUTĂ se editează doar înainte de alocare (PendingApproval/Approved) —
 /// după alocare (Active), perioada reală (actualCheckIn/actualCheckOut) preia rolul.
 /// `CaseManagerUserId` **[NOU]** se poate seta/schimba oricând, indiferent de status —
 /// desemnarea managerului de caz nu ține de fluxul de aprobare/alocare.</summary>
-public record UpdateBookingRequest(DateOnly? RequestedCheckIn, DateOnly? RequestedCheckOut, Guid? CaseManagerUserId);
+public record UpdateBookingRequest(DateOnly? RequestedCheckIn, DateOnly? RequestedCheckOut, Guid? CaseManagerUserId, string? Notes = null);
 
 public record AddCommentRequest(string Text);
 
